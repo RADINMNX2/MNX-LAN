@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "MNX-LAN",
+  "version": "0.1.0",
+  "identifier": "com.mnx.lan",
+  "build": {
+    "beforeDevCommand": "",
+    "beforeBuildCommand": "",
+    "devUrl": "http://localhost:1420",
+    "frontendDist": "../src"
+  },
+  "app": {
+    "withGlobalTauri": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "MNX LAN",
+        "width": 960,
+        "height": 640,
+        "minWidth": 820,
+        "minHeight": 560,
+        "center": true,
+        "resizable": true,
+        "decorations": false,
+        "transparent": true,
+        "shadow": true
+      }
+    ],
+    "security": {
+      "csp": "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; connect-src 'self'"
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["nsis"],
+    "category": "Utility",
+    "shortDescription": "Zero-latency Virtual LAN Gaming Suite",
+    "longDescription": "MNX LAN creates a zero-latency virtual LAN over the internet using the Wintun kernel driver and STUN hole-punched peer-to-peer UDP tunnels. No relay servers — raw physical latency.",
+    "icons": ["icons/icon.ico"]
+  }
+}

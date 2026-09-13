@@ -1,0 +1,120 @@
+name: build-release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install stable Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Verify wintun.dll integrity
+        shell: pwsh
+        run: |
+          $dll = "src-tauri/assets/wintun/x64/wintun.dll"
+          $actual = (Get-FileHash -LiteralPath $dll -Algorithm SHA256).Hash
+          $expected = ((Get-Content "src-tauri/assets/wintun.sha256" -Raw) -split '\s+' | Select-Object -First 1)
+          Write-Output "expected: $expected"
+          Write-Output "actual:   $actual"
+          if ($actual -ne $expected.ToUpper()) {
+            Write-Error "wintun.dll hash mismatch - refusing to build"
+            exit 1
+          }
+
+      - name: Install Tauri CLI
+        run: npm i -D @tauri-apps/cli@^2.11.4
+
+      - name: Build release binary (no bundle)
+        run: npx tauri build --no-bundle
+
+      - name: Run engine selftest (peer framing + STUN reachability)
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path "src-tauri/target/release" -Filter "*.exe" | Where-Object { $_.Name -match "mnx|MNX|lan|LAN" } | Select-Object -First 1
+          if (-not $exe) {
+            Write-Error "no .exe produced"
+            exit 1
+          }
+          Write-Output "Testing: $($exe.FullName)"
+          & $exe.FullName --selftest
+          if ($LASTEXITCODE -ne 0) {
+            Write-Error "selftest FAILED (exit $LASTEXITCODE)"
+            exit 1
+          }
+
+      - name: Size gate (<12MB)
+        shell: pwsh
+        run: |
+          $exe = Get-ChildItem -Path "src-tauri/target/release" -Filter "*.exe" | Select-Object -First 1
+          $mb = $exe.Length / 1MB
+          Write-Output "EXE: $($exe.Name) = $([math]::Round($mb, 2)) MB ($($exe.Length) bytes)"
+          if ($mb -gt 12) {
+            Write-Error "exe exceeds 12MB budget ($mb MB)"
+            exit 1
+          }
+          $exe.FullName | Out-File -FilePath "exe-path.txt" -Encoding ascii
+
+      - name: Compute checksums
+        shell: pwsh
+        run: |
+          $exe = Get-Content "exe-path.txt"
+          $sum = Get-FileHash -LiteralPath $exe -Algorithm SHA256
+          $lines = @(
+            "$($sum.Hash.ToLower())  $($sum.Path -replace '.*\\', '')",
+            "$((Get-FileHash -LiteralPath 'src-tauri/assets/wintun/x64/wintun.dll' -Algorithm SHA256).Hash.ToLower())  wintun.dll"
+          )
+          $lines | Set-Content -Path "SHA256SUMS.txt" -Encoding ascii
+          Get-Content "SHA256SUMS.txt"
+
+      - name: Upload executable artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: MNX-LAN-executable
+          path: src-tauri/target/release/mnx-lan.exe
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Publish GitHub Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            src-tauri/target/release/mnx-lan.exe
+            src-tauri/assets/wintun/x64/wintun.dll
+            SHA256SUMS.txt
+          body: |
+            ## MNX LAN v0.1.0
+
+            Zero-latency Virtual LAN Gaming Suite.
+
+            - Wintun kernel driver virtual adapter on `10.88.0.0/16`
+            - Direct P2P UDP tunnels via STUN hole-punching — zero relay servers
+            - LAN game broadcast replicator (27015, 19132, 6112 + custom ports)
+            - DSCP-prioritized sockets
+            - Native Windows 11 Fluent/Mica UI
+
+            **Note:** launch as Administrator to create the virtual adapter.
+            `wintun.dll` is the official WireGuard LLC signed driver (v0.14.1).
+          generate_release_notes: true

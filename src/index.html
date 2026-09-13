@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MNX LAN</title>
+  <link rel="stylesheet" href="styles/fluent-mica.css" />
+</head>
+<body>
+  <div id="app-shell">
+    <header id="sys-titlebar" data-tauri-drag-region>
+      <div class="tb-brand" data-tauri-drag-region>
+        <span class="tb-dot"></span>
+        <span class="tb-name">MNX LAN</span>
+        <span class="tb-tag">zero-latency virtual LAN</span>
+      </div>
+      <div class="tb-controls">
+        <button id="btn-theme" class="tb-btn" title="Toggle theme" aria-label="Toggle theme">
+          <span class="ic ic-moon"></span>
+        </button>
+        <button id="btn-min" class="tb-btn" title="Minimize" aria-label="Minimize"><span class="ic ic-min"></span></button>
+        <button id="btn-max" class="tb-btn" title="Maximize" aria-label="Maximize"><span class="ic ic-max"></span></button>
+        <button id="btn-close" class="tb-btn tb-close" title="Close" aria-label="Close"><span class="ic ic-close"></span></button>
+      </div>
+    </header>
+
+    <main id="content">
+      <section id="room-panel" class="card">
+        <h2>Network Room</h2>
+        <div class="room-controls">
+          <button id="btn-create" class="btn btn-primary">Create Room</button>
+          <div class="join-row">
+            <span id="room-id" class="join-room-id">—</span>
+          </div>
+          <div id="not-in-room" class="join-controls">
+            <input id="input-room" type="text" placeholder="Room ID (MNX-XXXX)" spellcheck="false" />
+            <input id="input-host" type="text" placeholder="Host IP or domain" spellcheck="false" />
+            <input id="input-port" type="number" placeholder="Port" value="31701" min="1024" max="65535" />
+            <button id="btn-join" class="btn btn-accent">Join Room</button>
+          </div>
+          <div id="in-room" class="in-room hidden">
+            <div class="room-facts">
+              <div class="fact"><span class="fact-label">Room</span><span id="room-code-copy" class="fact-value copyable" title="Click to copy">MNX-XXXX</span></div>
+              <div class="fact"><span class="fact-label">Your VIP</span><span id="vip-copy" class="fact-value copyable" title="Click to copy">10.88.0.1</span></div>
+              <div class="fact"><span class="fact-label">Host</span><span id="host-name" class="fact-value">—</span></div>
+              <div class="fact"><span class="fact-label">NAT</span><span id="nat-badge" class="badge badge-neutral">probe…</span></div>
+            </div>
+            <button id="btn-leave" class="btn btn-ghost">Leave Room</button>
+          </div>
+          <div id="admin-warning" class="admin-warning hidden">
+            <span>Wintun needs administrator rights to create the virtual adapter.</span>
+            <button id="btn-elevate" class="btn btn-accent">Relaunch as Admin</button>
+          </div>
+        </div>
+        <div class="custom-ports">
+          <label for="input-ports">Extra broadcast ports</label>
+          <input id="input-ports" type="text" placeholder="e.g. 7777, 10001, 16000" spellcheck="false" />
+          <button id="btn-apply-ports" class="btn btn-ghost btn-sm">Apply</button>
+        </div>
+      </section>
+
+      <section id="matrix-section" class="card">
+        <div class="matrix-head">
+          <h2>Peer Matrix</h2>
+          <span id="peer-count" class="badge badge-neutral">0 peers</span>
+        </div>
+        <div id="peer-matrix" class="peer-matrix">
+          <div class="empty-state" id="empty-state">
+            <div class="empty-glyph"></div>
+            <p>No peers yet. Create or join a room to start playing.</p>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast-host"></div>
+  <script src="app.js"></script>
+</body>
+</html>
