@@ -44,20 +44,19 @@ fn parse_xor_mapped_address(v: &[u8], txid: &[u8]) -> Option<SocketAddr> {
 pub async fn mapped_addr(sock: &UdpSocket) -> Result<SocketAddr, String> {
     let mut last_err = String::from("no STUN server reachable");
     for srv in STUN_SERVERS {
-        let mut srv_addr = None;
-        match tokio::net::lookup_host(srv).await {
-            Ok(mut it) => srv_addr = it.next(),
+        let srv_addr = match tokio::net::lookup_host(srv).await {
+            Ok(mut it) => it.next(),
             Err(e) => {
                 last_err = format!("resolve {srv}: {e}");
                 continue;
             }
-        }
+        };
         let Some(srv_addr) = srv_addr else {
             last_err = format!("no address for {srv}");
             continue;
         };
 
-        let mut msg = stun::Message::new();
+        let mut msg = stun::message::Message::new();
         msg.set_type(stun::message::BINDING_REQUEST);
         if let Err(e) = msg.new_transaction_id() {
             last_err = format!("txid: {e}");
@@ -79,10 +78,10 @@ pub async fn mapped_addr(sock: &UdpSocket) -> Result<SocketAddr, String> {
             let mut buf = [0u8; 2048];
             loop {
                 let (n, _) = sock.recv_from(&mut buf).await.map_err(|e| e.to_string())?;
-                if !stun::is_message(&buf[..n]) {
+                if !stun::message::is_message(&buf[..n]) {
                     continue;
                 }
-                let mut resp = stun::Message::new();
+                let mut resp = stun::message::Message::new();
                 resp.write(&buf[..n]).map_err(|e| e.to_string())?;
                 if resp.transaction_id.0 != txid {
                     continue;
@@ -96,7 +95,7 @@ pub async fn mapped_addr(sock: &UdpSocket) -> Result<SocketAddr, String> {
                 }
                 if resp.typ == stun::message::BINDING_SUCCESS {
                     let v = resp
-                        .get(stun::attributes::ATTR_XOR_MAPPED_ADDRESS)
+                        .get(stun::attributes::ATTR_XORMAPPED_ADDRESS)
                         .map_err(|e| format!("no xor-mapped address: {e}"))?;
                     let addr = parse_xor_mapped_address(&v, &txid)
                         .ok_or_else(|| String::from("malformed xor-mapped address"))?;

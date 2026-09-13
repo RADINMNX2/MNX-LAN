@@ -222,12 +222,7 @@ impl Engine {
 
         match ack {
             CtrlMsg::JoinAck { room, host, vip, peers } => {
-                let room_state = Room {
-                    id: room.clone(),
-                    host_name: host.clone(),
-                    peers: HashMap::new(),
-                    next_vip: 2,
-                };
+                let room_state = Room::rejoin(room.clone(), host.clone());
                 *self.inner.room.write().unwrap() = Some(room_state);
                 *self.inner.my_vip.write().unwrap() = vip.clone();
                 tun.set_ip(&vip);
@@ -260,10 +255,7 @@ impl Engine {
                     }
                 }
 
-                self.emit_event(
-                    "peer-list",
-                    (room, host, vip, peers.len()).to_string(),
-                );
+                self.emit_event("peer-list", String::new());
                 Ok(CreateRoomResult {
                     room_id: room,
                     my_vip: vip,
@@ -585,16 +577,25 @@ impl Engine {
     fn spawn_tun_relay(&self) {
         let eng = self.clone();
         let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel::<Vec<u8>>();
-        *self.inner.tun_tx.lock().unwrap() = Some(tx);
+        *self.inner.tun_tx.lock().unwrap() = Some(tx.clone());
+
+        if let Some(tun) = self.inner.tun.lock().unwrap().clone() {
+            network::adapter::spawn_tun_rx_loop(tun.session(), tx);
+        }
 
         tauri::async_runtime::spawn(async move {
             while let Some(pkt) = rx.recv().await {
                 let out = eng.inner.replicator.lock().unwrap().should_replicate(&pkt);
                 let Some(out) = out else { continue };
                 let Some(sock) = eng.socket() else { continue };
+                let cap;
+                {
+                    let repl = eng.inner.replicator.lock().unwrap();
+                    cap = repl.fanout_cap;
+                }
                 let peers = eng.inner.peers.lock().unwrap().clone();
                 let frame = data_frame(&out);
-                for (_, p) in &peers {
+                for (_, p) in peers.iter().take(cap) {
                     let _ = sock.try_send_to(&frame, p.endpoint);
                 }
             }

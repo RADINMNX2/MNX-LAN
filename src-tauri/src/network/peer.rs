@@ -45,7 +45,7 @@ pub fn bind_tos_socket() -> Result<UdpSocket, String> {
     sock.set_reuse_address(true).map_err(|e| e.to_string())?;
     sock.set_nonblocking(true).map_err(|e| e.to_string())?;
 
-    let any: SocketAddr = "0.0.0.0:0".parse().map_err(|e| e.to_string())?;
+    let any: SocketAddr = SocketAddr::from(([0, 0, 0, 0], 0));
     sock.bind(&SockAddr::from(any)).map_err(|e| e.to_string())?;
 
     let std_sock: std::net::UdpSocket = sock.into();

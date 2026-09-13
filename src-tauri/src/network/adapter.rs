@@ -1,5 +1,7 @@
 use std::sync::Arc;
 
+use crate::lobby::room::VIRTUAL_MASK;
+
 const EMBEDDED_DLL: &[u8] = include_bytes!("../../assets/wintun/x64/wintun.dll");
 
 #[cfg(target_os = "windows")]
@@ -30,7 +32,6 @@ fn dll_file() -> Result<std::path::PathBuf, String> {
 pub struct TunAdapter {
     session: Arc<wintun::Session>,
     _adapter: Arc<wintun::Adapter>,
-    name: String,
 }
 
 impl TunAdapter {
@@ -53,8 +54,7 @@ impl TunAdapter {
 
         let tun = TunAdapter {
             session: session.clone(),
-            _adapter: Arc::new(adapter),
-            name: adapter_name.to_string(),
+            _adapter: adapter,
         };
 
         let _ = std::process::Command::new("netsh")
@@ -77,14 +77,10 @@ impl TunAdapter {
                 "name=MNX-LAN",
                 "source=static",
                 ip,
-                "255.255.0.0",
+                VIRTUAL_MASK,
                 "gateway=none",
             ])
             .output();
-    }
-
-    pub fn name(&self) -> &str {
-        &self.name
     }
 
     pub fn inject(&self, ip_packet: &[u8]) -> Result<(), String> {

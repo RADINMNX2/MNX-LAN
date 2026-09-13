@@ -26,6 +26,11 @@ pub const HOST_VIP: &str = "10.88.0.1";
 pub const VIRTUAL_NET: &str = "10.88.0.0";
 pub const VIRTUAL_MASK: &str = "255.255.0.0";
 
+pub fn virtual_ip(host: u16) -> String {
+    let prefix = &VIRTUAL_NET[..VIRTUAL_NET.len() - 1];
+    format!("{prefix}{host}")
+}
+
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct RoomPeer {
     pub name: String,
@@ -44,11 +49,20 @@ impl Room {
         }
     }
 
+    pub fn rejoin(id: String, host_name: String) -> Self {
+        Room {
+            id,
+            host_name,
+            peers: std::collections::HashMap::new(),
+            next_vip: 2,
+        }
+    }
+
     pub fn next_virtual_ip(&mut self) -> String {
         if self.next_vip > 254 {
             return HOST_VIP.to_string();
         }
-        let ip = format!("10.88.0.{}", self.next_vip);
+        let ip = virtual_ip(self.next_vip as u16);
         self.next_vip += 1;
         ip
     }
