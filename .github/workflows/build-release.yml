@@ -58,9 +58,9 @@ jobs:
             exit 1
           }
           Write-Output "Testing: $($exe.FullName)"
-          & $exe.FullName --selftest
-          if ($LASTEXITCODE -ne 0) {
-            Write-Error "selftest FAILED (exit $LASTEXITCODE)"
+          $proc = Start-Process -FilePath $exe.FullName -ArgumentList '--selftest' -PassThru -Wait
+          if ($proc.ExitCode -ne 0) {
+            Write-Error "selftest FAILED (exit $($proc.ExitCode))"
             exit 1
           }
 

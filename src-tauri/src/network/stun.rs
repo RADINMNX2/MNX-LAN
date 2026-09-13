@@ -45,7 +45,7 @@ pub async fn mapped_addr(sock: &UdpSocket) -> Result<SocketAddr, String> {
     let mut last_err = String::from("no STUN server reachable");
     for srv in STUN_SERVERS {
         let srv_addr = match tokio::net::lookup_host(srv).await {
-            Ok(mut it) => it.next(),
+            Ok(mut it) => it.find(|a| a.is_ipv4()),
             Err(e) => {
                 last_err = format!("resolve {srv}: {e}");
                 continue;
@@ -62,6 +62,7 @@ pub async fn mapped_addr(sock: &UdpSocket) -> Result<SocketAddr, String> {
             last_err = format!("txid: {e}");
             continue;
         }
+        msg.encode();
         let txid = msg.transaction_id.0;
         let mut raw = Vec::new();
         if let Err(e) = msg.write_to(&mut raw) {
