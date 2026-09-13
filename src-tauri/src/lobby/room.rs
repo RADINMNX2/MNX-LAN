@@ -40,7 +40,7 @@ impl Room {
         while self.next_host_byte <= 254 {
             let b = self.next_host_byte;
             self.next_host_byte += 1;
-            let vip_u32 = ip_v4(10, 88, 0, b);
+            let vip_u32 = ip_v4(10, 88, 0, b as u8);
             let vip = Ipv4Addr::from(vip_u32).to_string();
             let taken = self.peers.values().any(|p| p.vip == vip) || self.self_peer.vip == vip;
             if !taken {

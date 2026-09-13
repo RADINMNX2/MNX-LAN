@@ -37,7 +37,7 @@ pub const MEDIA_SUBNET_A: u8 = 10;
 pub const MEDIA_SUBNET_B: u8 = 88;
 pub const HOST_VIP: u32 = ip_v4(MEDIA_SUBNET_A, MEDIA_SUBNET_B, 0, 1);
 
-pub fn ip_v4(a: u8, b: u8, c: u8, d: u8) -> u32 {
+pub const fn ip_v4(a: u8, b: u8, c: u8, d: u8) -> u32 {
     (a as u32) << 24 | (b as u32) << 16 | (c as u32) << 8 | d as u32
 }
 

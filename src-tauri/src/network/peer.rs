@@ -17,7 +17,7 @@ pub fn new_udp_socket(bind: SocketAddr) -> Result<tokio::net::UdpSocket, String>
         Some(socket2::Protocol::UDP),
     )
     .map_err(|e| format!("socket create: {e}"))?;
-    let _ = sock.set_tos(0x2E);
+    let _ = sock.set_tos_v4(0x2E);
     let _ = sock.set_reuse_address(true);
     sock.bind(&bind.into()).map_err(|e| format!("bind {bind}: {e}"))?;
     sock.set_nonblocking(true).map_err(|e| e.to_string())?;

@@ -118,7 +118,7 @@ impl Engine {
         let sock = new_udp_socket(bind)
             .or_else(|_| new_udp_socket(SocketAddr::new(IpAddr::V4(Ipv4Addr::UNSPECIFIED), 0)))?;
         let sock = Arc::new(sock);
-        *self.inner.lock().unwrap().socket = Some(Arc::clone(&sock));
+        self.inner.lock().unwrap().socket = Some(Arc::clone(&sock));
         Ok(sock)
     }
 
@@ -126,8 +126,8 @@ impl Engine {
         if self.inner.lock().unwrap().tun.is_some() {
             return Ok(());
         }
-        let (dll, _path) = adapter::load_wintun(&self.dll_candidates)?;
-        let adapter = adapter::ensure_adapter(&dll.0)?;
+        let (_dll_path, loaded) = adapter::load_wintun(&self.dll_candidates)?;
+        let adapter = adapter::ensure_adapter(&loaded.0)?;
         adapter::configure(&adapter, Ipv4Addr::from(vip))?;
         let session = adapter::start_session(&adapter)?;
         let (tx, rx) = mpsc::channel::<Vec<u8>>(768);
@@ -137,7 +137,7 @@ impl Engine {
         g.tun = Some(Tun {
             adapter,
             session,
-            dll,
+            dll: loaded,
             running,
             reader: Some(reader),
         });
@@ -241,7 +241,7 @@ impl Engine {
         let vip = tokio::time::timeout(std::time::Duration::from_secs(6), rx)
             .await
             .ok()
-            .flatten()
+            .and_then(|r| r.ok())
             .ok_or_else(|| {
                 "No response from host. Verify the room code and that the host is online.".to_string()
             })?;
@@ -474,18 +474,20 @@ impl Engine {
     async fn handle_host_hello(&self, code: String, name: String, src: SocketAddr) {
         let plan = {
             let mut g = self.inner.lock().unwrap();
-            let Some(room) = g.room.as_mut() else {
-                return;
-            };
-            if room.code != code {
+            if !g.room.as_ref().map(|r| r.code == code).unwrap_or(false) {
                 return;
             }
-            let Some(vip) = room.alloc_vip() else {
-                drop(g);
-                self.notify("error", "Room is full.");
-                return;
-            };
+            let existing: Vec<PeerInfo> = g.peers.values().map(|p| p.info.clone()).collect();
             let id = fresh_id();
+            let (room_code, vip, host_name) = {
+                let room = g.room.as_mut().expect("room checked above");
+                let Some(vip) = room.alloc_vip() else {
+                    drop(g);
+                    self.notify("error", "Room is full.");
+                    return;
+                };
+                (room.code.clone(), vip, room.host_name.clone())
+            };
             let info = PeerInfo {
                 id: id.clone(),
                 name,
@@ -494,7 +496,6 @@ impl Engine {
                 rtt_ms: 0,
                 p2p: false,
             };
-            let existing: Vec<PeerInfo> = g.peers.values().map(|p| p.info.clone()).collect();
             g.peers.insert(
                 id.clone(),
                 PeerRuntime {
@@ -504,9 +505,9 @@ impl Engine {
                     established: true,
                 },
             );
-            room.peers.insert(id.clone(), info.clone());
-            let host_name = room.host_name.clone();
-            let room_code = room.code.clone();
+            if let Some(room) = g.room.as_mut() {
+                room.peers.insert(id.clone(), info.clone());
+            }
             let socket = g.socket.clone().expect("socket must exist");
             (room_code, vip, host_name, existing, info, socket)
         };
@@ -569,7 +570,7 @@ impl Engine {
     }
 
     async fn tun_pump(self: &Arc<Self>) {
-        let mut rx = self.inner.lock().unwrap().packet_rx.take();
+        let rx = self.inner.lock().unwrap().packet_rx.take();
         let Some(mut rx) = rx else { return };
         while let Some(pkt) = rx.recv().await {
             self.route_tun_packet(&pkt).await;
