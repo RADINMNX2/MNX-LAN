@@ -34,7 +34,7 @@
     "shortDescription": "Zero-latency Virtual LAN for LAN gaming",
     "longDescription": "MNX LAN by RADIN MNX - an ultra-lightweight virtual LAN gaming suite built on the Wintun kernel driver with direct peer-to-peer tunnels and zero relay servers.",
     "icon": ["icons/icon.ico"],
-    "resources": ["assets/**"],
+    "resources": ["assets/wintun.dll"],
     "windows": {
       "nsis": {
         "installMode": "currentUser",
