@@ -36,6 +36,6 @@
     "category": "Utility",
     "shortDescription": "Zero-latency Virtual LAN Gaming Suite",
     "longDescription": "MNX LAN creates a zero-latency virtual LAN over the internet using the Wintun kernel driver and STUN hole-punched peer-to-peer UDP tunnels. No relay servers — raw physical latency.",
-    "icons": ["icons/icon.ico"]
+    "icon": ["icons/icon.ico"]
   }
 }
