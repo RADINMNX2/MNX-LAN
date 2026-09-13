@@ -312,10 +312,29 @@
     document.querySelectorAll(".view").forEach((v) => v.classList.toggle("active", v.id === "view-" + view));
   }
 
+  function applyWindowEffects() {
+    if (!IS_TAURI) return;
+    try {
+      const api = window.__TAURI__.window;
+      if (api && api.getCurrentWindow && api.getCurrentWindow().setEffects) {
+        api.getCurrentWindow().setEffects({
+          effects: [
+            {
+              variant: "mica",
+              radius: 12,
+            },
+          ],
+          state: "active",
+        });
+      }
+    } catch (_) {}
+  }
+
   function init() {
     setupWindowControls();
     nav();
     wireActions();
+    applyWindowEffects();
     listen("session", (e) => applySession(e.payload));
     listen("peers", (e) => {
       STATE.peers = (e.payload && e.payload.peers) || [];

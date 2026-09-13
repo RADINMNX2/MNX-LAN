@@ -21,6 +21,15 @@
         "decorations": false,
         "transparent": true,
         "shadow": true
+      } false,
+        "transparent": false,
+        "shadow": true,
+        "effects": [
+          {
+            "effect": "mica",
+            "roundCorners": true
+          }
+        ]
       }
     ],
     "security": {
