@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark light" />
+  <title>MNX LAN</title>
+  <link rel="stylesheet" href="styles/fluent-mica.css" />
+</head>
+<body>
+  <div class="titlebar" data-tauri-drag-region>
+    <div class="titlebar-brand" data-tauri-drag-region>
+      <div class="brand-mark">MNX</div>
+      <span class="brand-name">MNX LAN</span>
+      <span class="brand-tag">zero-latency virtual LAN</span>
+    </div>
+    <div class="titlebar-controls no-drag">
+      <button class="win-btn" id="btn-min" title="Minimize" aria-label="Minimize">
+        <svg width="10" height="10" viewBox="0 0 10 10"><path d="M0 5h10" stroke="currentColor" stroke-width="1"/></svg>
+      </button>
+      <button class="win-btn" id="btn-max" title="Maximize" aria-label="Maximize">
+        <svg width="10" height="10" viewBox="0 0 10 10"><rect x="0.5" y="0.5" width="9" height="9" fill="none" stroke="currentColor"/></svg>
+      </button>
+      <button class="win-btn win-btn-close" id="btn-close" title="Close" aria-label="Close">
+        <svg width="10" height="10" viewBox="0 0 10 10"><path d="M0 0l10 10M10 0L0 10" stroke="currentColor" stroke-width="1"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="layout">
+    <nav class="sidebar">
+      <div class="sidebar-section-label">LOBBY</div>
+      <button class="nav-item active" data-view="home">
+        <span class="nav-ico">⌂</span> Home
+      </button>
+      <button class="nav-item" data-view="rooms">
+        <span class="nav-ico">⛯</span> Room
+      </button>
+      <button class="nav-item" data-view="peers">
+        <span class="nav-ico">◉</span> Peers
+        <span class="nav-badge" id="peer-count" hidden>0</span>
+      </button>
+      <div class="sidebar-section-label spacer">SYSTEM</div>
+      <button class="nav-item" data-view="settings">
+        <span class="nav-ico">⚙</span> Settings
+      </button>
+      <div class="sidebar-footer">
+        <div class="status-pill" id="net-status">
+          <span class="dot" id="status-dot"></span>
+          <span id="status-text">Idle</span>
+        </div>
+      </div>
+    </nav>
+
+    <main class="content">
+      <section id="view-home" class="view active">
+        <div class="hero">
+          <h1>Gather your party<span class="grade">.</span></h1>
+          <p>
+            Spin up a virtual LAN in one click. A real Wintun kernel adapter, direct
+            peer-to-peer tunnels, and zero relay servers — the latency you feel is just physics.
+          </p>
+          <div class="hero-chips">
+            <span class="chip"><span class="chip-dot ok"></span>Wintun kernel driver</span>
+            <span class="chip"><span class="chip-dot ok"></span>Native NAT punch-through</span>
+            <span class="chip"><span class="chip-dot ok"></span>Zero relay servers</span>
+          </div>
+        </div>
+
+        <div class="card-grid">
+          <div class="card">
+            <div class="card-head">
+              <div class="card-ico host">H</div>
+              <div>
+                <h2>Host a room</h2>
+                <p class="muted">You become the lobby — everyone tunnels straight to you.</p>
+              </div>
+            </div>
+            <div class="field-row">
+              <input id="host-name" class="input" type="text" maxlength="24" placeholder="Your gamer tag" />
+              <button class="btn btn-accent" id="btn-create">
+                <span class="btn-glow"></span>
+                <span>Go online</span>
+              </button>
+            </div>
+            <p class="muted small" id="host-hint">Assigns you 10.88.0.1 and installs the virtual adapter.</p>
+          </div>
+
+          <div class="card">
+            <div class="card-head">
+              <div class="card-ico join">J</div>
+              <div>
+                <h2>Join a party</h2>
+                <p class="muted">Drop in with a room code, or a full connect string.</p>
+              </div>
+            </div>
+            <div class="field-row">
+              <input id="join-target" class="input" type="text" maxlength="80" placeholder="MNX-XXXX  ·  MNX-XXXX@host:38888" />
+              <button class="btn" id="btn-join">Connect</button>
+            </div>
+            <p class="muted small">Same network? The code is all you need — we auto-discover the host.</p>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-rooms" class="view">
+        <div class="hero compact">
+          <h1>Your room</h1>
+          <p id="room-subtitle">Connection &amp; identity at a glance.</p>
+        </div>
+        <div class="room-banner" id="room-banner" hidden>
+          <div class="room-code" id="room-code">MNX-XXXX</div>
+          <div class="room-meta">
+            <div class="meta-item">
+              <span class="meta-label">Virtual IP</span>
+              <button class="copy-inline" id="cop-vip"><span id="room-vip">10.88.0.1</span> ⧉</button>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Public endpoint</span>
+              <button class="copy-inline" id="cop-pub"><span id="room-pub">—</span> ⧉</button>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Connect string</span>
+              <button class="copy-inline" id="cop-invite"><span id="room-invite">—</span> ⧉</button>
+            </div>
+          </div>
+          <button class="btn btn-danger" id="btn-leave">Leave room</button>
+        </div>
+        <div id="room-empty" class="empty-state">
+          <div class="empty-mark">⛯</div>
+          <h3>No active room</h3>
+          <p class="muted">Host or join a room to see your network identity here.</p>
+        </div>
+      </section>
+
+      <section id="view-peers" class="view">
+        <div class="hero compact">
+          <h1>Peer matrix</h1>
+          <p class="muted">Live cards for everyone in your virtual LAN — ping badges update in real time.</p>
+        </div>
+        <div class="peer-grid" id="peer-grid">
+          <div class="peer-card self" id="self-card"></div>
+        </div>
+        <div id="peer-empty" class="empty-state">
+          <div class="empty-mark">◉</div>
+          <h3>Nobody here yet</h3>
+          <p class="muted">Once someone joins, their card appears here with live latency.</p>
+        </div>
+      </section>
+
+      <section id="view-settings" class="view">
+        <div class="hero compact">
+          <h1>Settings</h1>
+          <p class="muted">Preferences and system state.</p>
+        </div>
+        <div class="card settings-card">
+          <h2>Profile</h2>
+          <div class="field-row">
+            <input id="set-name" class="input" type="text" maxlength="24" placeholder="Gamer tag" />
+            <button class="btn" id="btn-save-name">Save</button>
+          </div>
+        </div>
+        <div class="card settings-card">
+          <h2>Network state</h2>
+          <div class="kv">
+            <span class="muted">Virtual adapter</span><span id="kv-adapter">—</span>
+            <span class="muted">Adapter IP</span><span id="kv-vip">—</span>
+            <span class="muted">Subnet</span><span>10.88.0.0/16</span>
+            <span class="muted">Mode</span><span id="kv-mode">Idle</span>
+          </div>
+          <p class="muted small">Requires Administrator privileges for the Wintun kernel driver.</p>
+        </div>
+        <div class="card settings-card about">
+          <h2>MNX LAN <span class="ver" id="app-ver">v0.1.0</span></h2>
+          <p class="muted small">by RADIN MNX · Rust + Wintun · Tauri v2 · Fluent 2. MIT Licensed.</p>
+          <div class="feature-strip">
+            <span>STUN / UDP hole-punching</span>
+            <span>LAN broadcast replicator</span>
+            <span>DSCP-prioritized sockets</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <div id="toasts" aria-live="polite"></div>
+  <script src="app.js"></script>
+</body>
+</html>
