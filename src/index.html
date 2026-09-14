@@ -3,20 +3,31 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="color-scheme" content="dark light" />
   <title>MNX LAN</title>
   <link rel="stylesheet" href="styles/fluent-mica.css" />
 </head>
 <body>
   <div id="app-shell">
+    <div class="aurora" aria-hidden="true">
+      <i class="aurora-blob a1"></i>
+      <i class="aurora-blob a2"></i>
+      <i class="aurora-blob a3"></i>
+    </div>
+
     <header id="sys-titlebar" data-tauri-drag-region>
       <div class="tb-brand" data-tauri-drag-region>
-        <span class="tb-dot"></span>
+        <span class="tb-mark" aria-hidden="true">
+          <i class="tm-orb"></i><i class="tm-ring"></i>
+        </span>
         <span class="tb-name">MNX LAN</span>
         <span class="tb-tag">zero-latency virtual LAN</span>
       </div>
       <div class="tb-controls">
         <button id="btn-theme" class="tb-btn" title="Toggle theme" aria-label="Toggle theme">
-          <span class="ic ic-moon"></span>
+          <span class="ic ic-theme" aria-hidden="true">
+            <i class="icon-moon"></i><i class="icon-sun"></i>
+          </span>
         </button>
         <button id="btn-min" class="tb-btn" title="Minimize" aria-label="Minimize"><span class="ic ic-min"></span></button>
         <button id="btn-max" class="tb-btn" title="Maximize" aria-label="Maximize"><span class="ic ic-max"></span></button>
@@ -28,8 +39,9 @@
       <section id="room-panel" class="card">
         <h2>Network Room</h2>
         <div class="room-controls">
-          <button id="btn-create" class="btn btn-primary">Create Room</button>
+          <button id="btn-create" class="btn btn-primary btn-prime">Create Room</button>
           <div class="join-row">
+            <span class="join-row-label">ROOM</span>
             <span id="room-id" class="join-room-id">—</span>
           </div>
           <div id="not-in-room" class="join-controls">
@@ -64,10 +76,13 @@
           <h2>Peer Matrix</h2>
           <span id="peer-count" class="badge badge-neutral">0 peers</span>
         </div>
-        <div id="peer-matrix" class="peer-matrix">
-          <div class="empty-state" id="empty-state">
-            <div class="empty-glyph"></div>
-            <p>No peers yet. Create or join a room to start playing.</p>
+        <div class="matrix-stage">
+          <canvas id="net-canvas" aria-hidden="true"></canvas>
+          <div id="peer-matrix" class="peer-matrix" data-count="0">
+            <div class="empty-state" id="empty-state">
+              <div class="radar" aria-hidden="true"><i class="radar-sweep"></i></div>
+              <p>No peers yet. Create or join a room to start playing.</p>
+            </div>
           </div>
         </div>
       </section>
