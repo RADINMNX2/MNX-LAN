@@ -1,6 +1,6 @@
 [package]
 name = "mnx-lan"
-version = "0.1.0"
+version = "0.1.3"
 description = "MNX LAN — zero-latency Virtual LAN Gaming Suite"
 authors = ["RADIN MNX"]
 edition = "2021"
